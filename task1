@@ -1,0 +1,37 @@
+from collections import deque, defaultdict
+
+class SocialNetwork:
+    def __init__(self):
+        self.graph = defaultdict(set)
+
+    def addConnection(userId1, userId2):
+        self.graph[userId1].add(userId1)
+        self.graph[userId2].add(userId2)
+        
+    def getDegreeOfSeperation(self,userId1,userId2):
+        if userId1 not in self.graph or userId2 not in self.graph:
+            return -1
+        visited = set()
+        queue = deque([userId1,0])
+        
+        while queue:
+            current, distance = queue.popleft()
+            if current == userId2:
+                return distance
+            visited.add(current)
+            
+            for neighbor in self.graph[current]:
+                if neighbor not in visited:
+                    queue.append(neighbor,distance+1)
+            return -1
+        
+    if _name_ == '_main_':
+        sn = SocialNetwork()
+        sn.addConnection('Alice','Bob')
+        sn.addConnection('Bob','Charlie')
+        sn.addConnection('Charlie','David')
+        
+        
+    print(sn.getDegreeOfSeparation('Alice','David'))
+    
+    print(sn.getDegreeOfSeparation('Charlie','David'))
