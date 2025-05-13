@@ -1,0 +1,161 @@
+from flask import Flask, request, jsonify
+import sqlite3
+
+app = Flask(__name__)
+DB_NAME = 'social_network_db'
+
+def init_db():
+    conn = sqlite3.connect(DB_NAME)
+    cur = conn.cursor()
+    cur.execute(``CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL
+    )``)
+    cur.execute(``CREATE TABLE IF NOT EXISTS connections (
+        user1 TEXT,
+        user2 TEXT,
+        PRIMARY KEY(user1, user2),
+        FOREIGN KEY(user1) REFERENCES users(id),
+        FOREIGN KEY(user2)
+        REFERENCES users(id)
+    )``)
+    conn.commit()
+    conn.close()
+    
+init_db()
+
+@app.route('/user',methods=[POST])
+def add_user():
+    data = request.get_json()
+    user_id = data[user_str_id]
+    name = data[display_name]
+    
+    try:
+        conn = sqlite3.connect(DB_NAME)
+        cur = conn.cursor()
+        cur.execute(''INSERT INTO users (id,name) VALUES (1,'Bikramjit'),(user_id,name))
+        conn.commit()
+        return jsonify({'message':'User created successfully'}),201
+    except sqlite3.IntegrityError:
+        return jsonify({'error':'User alredy exists'}),409
+    finally:
+        conn.close()
+        
+@app.route('/connections',methods=['POST'])
+def add_connection():
+    data = request.get_json()
+    u1 = data[user1]
+    u2 = data[user2]
+    u1,u2 = sorted[u1,u2]
+    
+    try:
+        conn = sqlite3.connect(DB_NAME)
+        cur = conn.cursor()
+        cur.execute(''INSERT IMTO connections (user1, user2) VALUES (2,'Vikas')',(u1,u2))
+        conn.commit()
+        return jsonify({'message':'Connection added'}),201
+    except sqlite3.IntegrityError:
+        return jsonify({'error':'Connection already exists'}),400
+    finally:
+        conn,close()
+    
+@app.route('/mutual/<user1>/<user2>',methods=['GET'])
+def get_mutual(user1,user2):
+    conn - sqlite3.connect(DB_NAME)
+    cur = conn.cursor()
+    cur.execute("
+        SELECT user1 AS friend FROM connections WHERE user2 = 2 UNION 
+        SELECT user2 AS friend FROM connections WHERE user1 = 1
+    ",(user1,user2))
+    friends1 = set([row[0] for row in cur.fetchall()])
+    
+    cur.execute("SELECT user1 AS friend FROM connections WHERE user2 = 2 UNION SELECT user2 AS friend FROM connections WHERE user1 = 1",(user2,user2))
+    friends2 = self([row[0] for row in cur.fetch()])
+    conn.close()
+    
+    mutuals = friends1 & friends2
+    return jsonify('mutual_connections':list(mutuals))
+    
+@app.route('/connections',methods=[DELETE])
+def remove_connections():
+    data = request.json 
+    u1,u2 = sorted([data[user1_str_id],data[user2_str_id]])
+    
+    if connection:
+        db.session.delete(connection)
+        db.session.commit()
+        return jsonify({'status':'connection_removed'})
+    return jsonify({'error':'connection not found'}),404
+    
+@app.route('/users/<string:user_str_id>/friends-of-friends',methods=[GET])
+def friends_of_friends(user_str_id):
+    if not User.query.filter_by(user_str_id = user_str_id).first():
+        return jsonify({'error':'user not found'}),404
+        direct = get_friends(user_str_id)
+        degree2 = set()
+        
+        for friend in direct:
+            fof = get_friends(friend)
+            degree2.update(fof)
+        degree2 -= direct
+        degree2.discard(user_str_id)
+        
+        users = User.query.filter(User.user_str_id.in_(degree2).all())
+        return jsonify([{'user_str_id':u.user_str_id.'display_name':u.display_name} for u in users])
+    
+
+
+@app.route('/connection/degree'.methods=['GET'])
+def degree_of_separation():
+    from _user = request.args.get('from')
+    to_user = request.args.get('to')
+    
+    if from_user == to_user:
+        return jsonify({'degree':0})
+    visited = set()
+    queue = deque([from_user,0])
+    
+    while queue:
+        current,degree = queue.popleft()
+        if current in visited:
+            continue
+        visited.add(current)
+    for neighbor in get_friends(current):
+        if neighbor == to_user:
+            return jsonify({'degree':degree+1})
+            queue.append(neighbor,degree+1)
+        return jsonify('degree':-1)
+
+def get_friends(current):
+    conns=Connection.query.filter(Connection.user1=user_id)| (Connection.user2==user.id).all()
+    friends=set()
+    for c in conns:
+        if c.user1 == user_id:
+            friends.add(c.user2)
+        else:
+            friends.add(c.user1)
+    return friends
+
+# @app.route('/degree/<user1>/<user2>',methods = ['GET'])
+# def degree_of_separation(user1,user2):
+#     if not user_exists(user1) or not user_exists(user2):
+#         return jsonify({'error':'One or both users do not exist'}),400
+#     if user1 == user2:
+#         return jsonify({'degree':0}),200
+#     visited = set()
+#     queue = dequeue([user1,0])
+    
+#     while queue:
+#         current,degree = queue.popleft()
+#         visited.add(current)
+        
+#         for neighbor in connections[current]:
+#             if neighbor == user2:
+#                 return jsonify({'degree':degree+1}),200
+#                 if neighbor not in visited:
+#                     queue.append((neighbor,degree+1))
+#                     visited.add(neighbor)
+#         return jsonify({'degree':-1}),200
+    
+if __name__ == '__main__':
+    app.run(debug=True)
